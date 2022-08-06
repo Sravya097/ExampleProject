@@ -4,6 +4,7 @@ import * as Yup from "yup";
 // import axios from "axios";
 import axios from "../../../../../../Uri";
 import { Container, Grid, InputLabel } from "@mui/material";
+import moment from "moment";
 
 import { makeStyles } from "@mui/styles";
 import MDTypography from "components/MDTypography";
@@ -43,6 +44,12 @@ const FORM_VALIDATION = Yup.object().shape({
 
     (value) => value > 0
 
+  ),
+  transactionDate: Yup.date().required("Required").test(
+    "Transaction date",
+    "Please choose a valid transactionDate date 🥱🥳",
+    (date) =>
+      moment().diff(moment(date), "years") <= 8
   ),
   transactionId:Yup.string().test(
     'len',
@@ -141,7 +148,7 @@ const GuestpaymentsinPopUp = (props) => {
                       <Textfield name="amountPaid"  />
                     </Grid>
                     <Grid item xs={6}>
-                      <h5>Transation Id</h5>
+                      <h5>Transaction Id</h5>
                       <Textfield name="transactionId"  />
                     </Grid>
 
@@ -173,6 +180,7 @@ const GuestpaymentsinPopUp = (props) => {
                       </Grid>
                   
                     
+  
 
 
                     <Grid item xs={12} sx={{ marginTop: 2 }} >

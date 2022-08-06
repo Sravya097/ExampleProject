@@ -5,6 +5,7 @@ import axios from "../../../../Uri";
 import { Container, Grid, Typography, InputLabel } from "@mui/material";
 import moment from "moment";
 import { makeStyles } from "@mui/styles";
+import { useNavigate } from "react-router-dom";
 import Occupancytype from "./OccupancyType";
 import Textfield from "./TextField";
 import Select from "./Select";
@@ -36,38 +37,7 @@ const OneMonth = "OneMonth";
 const daily = "Daily";
 
 let bid = null;
-const INITIAL_FORM_STATE = {
-  firstName: "",
-  lastName: "",
-  email: "",
-  dateOfBirth: "",
-  personalNumber: "",
-  secondaryPhoneNumber: "",
-  fatherName: "",
-  fatherNumber: "",
-  bloodGroup: "",
-  occupation: "",
-  gender: "",
-  aadharNumber: "",
-  buildingId: "",
-  bedId: "",
-  occupancyType: "",
-  duration: "",
-  amountPaid: "",
-  transactionId: "",
-  addressLine1: "",
-  addressLine2: "",
-  pincode: "",
-  city: "",
-  state: "",
-  guestPicture: "",
-  // createdBy:
-  amountToBePaid: "",
-  defaultRent: "",
-  securityDeposit: "",
-  checkinNotes: "",
-  checkInDate: "",
-};
+
 
 const FORM_VALIDATION = Yup.object().shape({
   firstName: Yup.string()
@@ -77,17 +47,20 @@ const FORM_VALIDATION = Yup.object().shape({
     .matches(/^[aA-zZ\s]+$/, "Invalid LastName ")
     .required("Required"),
   fatherName: Yup.string().matches(/^[aA-zZ\s]+$/, "Invalid LastName "),
-  email: Yup.string().email("Invalid email.").required("Required"),
-  dateOfBirth: Yup.date(),
-  checkInDate: Yup.date(),
-
-  // .test(
+  email: Yup.string().email("Invalid email."),
+  checkInDate: Yup.date().test(
+    "Check In Date",
+    "Please choose a valid Check In Date 🥱🥳",
+    (date) =>
+      moment().diff(moment(date), "years") <= 8
+  ).required("Required"),
+  // dateOfBirth: Yup.date().test(
   //   "DOB",
   //   "Please choose a valid date of birth",
   //   (date) =>
   //     moment().diff(moment(date), "years") >= 12 &&
   //     moment().diff(moment(date), "years") <= 80
-  // )
+  // ),
   bloodGroup: Yup.string().matches(/^(A|B|AB|O)[+-]$/, {
     message: "Please enter valid Blood Group.",
     excludeEmptyString: false,
@@ -97,13 +70,13 @@ const FORM_VALIDATION = Yup.object().shape({
     /^[aA-zZ\s]+$/,
     "Give a Valid Occupation Type "
   ),
-  gender: Yup.string().required("Required"),
+  gender: Yup.string(),
   personalNumber: Yup.string()
     .matches(/^[6-9]\d{9}$/, {
       message: "Please enter Valid Mobile Number",
       excludeEmptyString: false,
     })
-    .required("Required"),
+    ,
   secondaryPhoneNumber: Yup.string().matches(/^[6-9]\d{9}$/, {
     message: "Please enter Valid Mobile Number",
     excludeEmptyString: false,
@@ -115,21 +88,21 @@ const FORM_VALIDATION = Yup.object().shape({
 
   aadharNumber: Yup.string()
     .matches(/^\d{4}\d{4}\d{4}$/, "Invalid Aadhar Number")
-    .required("Required"),
+    ,
   pincode: Yup.string()
     .matches(/^\d{2}\d{2}\d{2}$/, "Invalid PinCode Number")
-    .required("Required"),
+    ,
 
   bedId: Yup.string().required("Required"),
 
-  addressLine1: Yup.string().required("Required"),
+  addressLine1: Yup.string(),
   city: Yup.string()
     .matches(/^[aA-zZ\s]+$/, "Invalid City Name")
-    .required("Required"),
+    ,
   addressLine2: Yup.string(),
   state: Yup.string()
     .matches(/^[aA-zZ\s]+$/, "Invalid State ")
-    .required("Required"),
+    ,
   buildingId: Yup.number().required("Required"),
   // occupancyType: Yup.string().required("Required"),
   amountPaid: Yup.number().required("Required"),
@@ -150,9 +123,14 @@ const FORM_VALIDATION = Yup.object().shape({
 console.log(JSON.parse(sessionStorage.getItem("userdata")));
 
 const GuestLoginForm = (props) => {
+
+  const navigate = useNavigate();
+  console.log("hi")
   function getOccupencyType(data) {
     console.log(data);
   }
+  //let empt = props.empty();
+  //onsole.log(empt)
   const [building, setBuilding] = React.useState([]);
   const [oneBuilding, setoneBuilding] = React.useState([]);
   const [bed, setBed] = React.useState([]);
@@ -172,12 +150,16 @@ const GuestLoginForm = (props) => {
   const [occupancyType, setOccupancyType] = React.useState({});
   const [sharing,setSharing]=React.useState(null);
   const [totalRent, setTotalRent] = useState("");
+  const [ratesId , setRatesId] = useState(null);
   const[roomType,setRoomType] = React.useState();
   let monthDuration;
   const getAmount = (data) => {
+    console.log(data);
     console.log("amount" + data.securityDeposit);
     // setRentAmount(data);
     //  setOccupancyObject(data)
+    setRatesId(data.ratesConfigId);
+    console.log(data.ratesConfigId);
     setSecureDepo(data.securityDeposit);
     setRentAmount(data.defaultRent);
     setOccupancyType(data.occupancyType);
@@ -193,6 +175,40 @@ const GuestLoginForm = (props) => {
     {
       setRoomType(false)
     }
+  };
+  const INITIAL_FORM_STATE = {
+    firstName: "",
+    lastName: "",
+    email: "",
+    dateOfBirth: "",
+    personalNumber: "",
+    secondaryPhoneNumber: "",
+    fatherName: "",
+    fatherNumber: "",
+    bloodGroup: "",
+    occupation: "",
+    gender: "",
+    aadharNumber: "",
+    buildingId: "",
+    bedId: "",
+    occupancyType: "",
+    duration: "",
+    amountPaid: "",
+    transactionId: "",
+    addressLine1: "",
+    addressLine2: "",
+    pincode: "",
+    city: "",
+    state: "",
+    guestPicture: "",
+    // createdBy:
+    amountToBePaid: "",
+    defaultRent: "",
+    securityDeposit: "",
+    checkinNotes: "",
+    checkInDate: "",
+    packageId:ratesId,
+    
   };
   console.log(roomType);
   console.log(duration);
@@ -238,7 +254,10 @@ const GuestLoginForm = (props) => {
   let userBuildingId = userData.data.buildingId;
   let userType = userData.data.userType;
   var userID = userData.data.userId;
-
+  const emptytable = ()=>{
+    console.log("Empty table")
+    setOccupancyType("")
+   }
   console.log(userBuildingId);
   function securityDepoist() {
     axios
@@ -393,7 +412,8 @@ const GuestLoginForm = (props) => {
   const obj5 = { buildingId: buildId };
   const obj6 = { occupancyType: occupancyType };
   const obj7={sharing:sharing};
-  const obj8={duration: duration};
+  const obj8={duration: duration,
+    packageId:ratesId};
   const amountNeedToPay = (n) => {};
 
   function handleChooseGuestPicture(event) {
@@ -403,6 +423,7 @@ const GuestLoginForm = (props) => {
       toast.warning("Please select file with less than 1 MB");
     }
   }
+  
   return (
     <div>
       <Typography>
@@ -423,7 +444,7 @@ const GuestLoginForm = (props) => {
               <Formik
                 initialValues={{ ...INITIAL_FORM_STATE }}
                 validationSchema={FORM_VALIDATION}
-                onSubmit={async (guest, { resetForm }) => {
+                onSubmit={async (guest, { resetForm },empty) => {
                   handleToggle();
 
                   const gustes = Object.assign(guest, obj);
@@ -437,6 +458,7 @@ const GuestLoginForm = (props) => {
                   const guestdata5 = Object.assign(guestdata4, obj6);
                   const guestdata6 =Object.assign(guestdata5,obj7);
                   const guestdata=Object.assign(guestdata6, obj8);
+                  // const byManohar=Object.assign(guestdata , )
 
                   console.log(guestdata);
                   try {
@@ -448,6 +470,8 @@ const GuestLoginForm = (props) => {
                             handleClose();
                             toast.success(" Guest onboarded successfully");
                             resetForm();
+                            
+                            empty;
                             const url = `guest/upload/${res.data.id}/`;
                             const formData = new FormData();
                             if (file !== null) {
@@ -476,9 +500,14 @@ const GuestLoginForm = (props) => {
                                   // toast.warning("File s")
                                   console.log("Not uploaded");
                                 });
+                              
                             } else {
                               // toast.warning(" Picture is Not Uploaded")
                             }
+                            setTimeout(() => {
+                              navigate("/tracker")
+                            }, 4000);
+                           
                           } else {
                             console.log("heeyyyyy");
                           }
@@ -561,7 +590,7 @@ const GuestLoginForm = (props) => {
                       <Grid item xs={6}>
                         <h6>CheckIn Date* </h6>
                         <DateTimePicker
-                          maxdate={new Date()}
+                         maxdate={new Date()}
                           name="checkInDate"
                           //label="Date of Birth"
                           required
@@ -758,14 +787,14 @@ const GuestLoginForm = (props) => {
                         />
                       </Grid>
 
-                      {/* <Grid item xs={12}>
+                      <Grid item xs={12}>
                         <h6>Guest Picture</h6>
                         
                         <input
                           type="file"
                           onChange={handleChooseGuestPicture}
                         />
-                      </Grid> */}
+                      </Grid>
                       <Grid item xs={12} />
 
                       <Grid item xs={12}>

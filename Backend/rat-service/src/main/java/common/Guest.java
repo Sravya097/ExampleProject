@@ -46,7 +46,7 @@ public class Guest {
     private double amountToBePaid;
     private double securityDeposit;
     private String guestStatus;
-    @JsonFormat(pattern="dd-MM-yyyy HH:mm:ss", timezone="IST")
+  
     private Date noticeDate;
      private double amountPaid;
     private String checkinNotes;
@@ -57,18 +57,22 @@ public class Guest {
     @JsonFormat(pattern="yyyy-MM-dd")
     private Date checkInDate ;
     
+    
+    
    // @DateTimeFormat(pattern = "dd-MM-yyyy")
-    @JsonFormat(pattern="dd-MM-yyyy HH:mm:ss", timezone="IST")
+    @JsonFormat(pattern="yyyy-MM-dd")
     private java.util.Date plannedCheckOutDate;
    // @DateTimeFormat(pattern = "dd-MM-yyyy")
-    @JsonFormat(pattern="dd-MM-yyyy HH:mm:ss", timezone="IST")
-    private java.util.Date checkOutDate;
+    
+    private Date checkOutDate;
     private double defaultRent;
 
 
     
     
-    public Date getNoticeDate() {
+    
+   
+	public java.util.Date getNoticeDate() {
 		return noticeDate;
 	}
 	public void setNoticeDate(Date noticeDate) {
@@ -94,7 +98,7 @@ public class Guest {
 	public java.util.Date getCheckOutDate() {
 		return checkOutDate;
 	}
-	public void setCheckOutDate(java.util.Date checkOutDate) {
+	public void setCheckOutDate(Date checkOutDate) {
 		this.checkOutDate = checkOutDate;
 	}
 	
@@ -133,7 +137,7 @@ public class Guest {
 			String workPhone, String workAddressLine1, String workAddressLine2, String transactionId,
 			String paymentPurpose, double amountToBePaid, double securityDeposit, String guestStatus, Date noticeDate,
 			double amountPaid, String checkinNotes, java.util.Date transactionDate, Date checkInDate,
-			 java.util.Date plannedCheckOutDate, java.util.Date checkOutDate,
+			Date plannedCheckOutDate,Date checkOutDate,
 			double defaultRent) {
 		super();
 		this.id = id;

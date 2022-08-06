@@ -2,6 +2,8 @@ package com.arshaa.controller;
 
 import com.arshaa.common.Bed;
 import com.arshaa.common.GuestModel;
+import com.arshaa.common.InitiateCheckoutByGuestId;
+import com.arshaa.common.UpdateGuestDetails;
 import com.arshaa.dtos.GuestDto;
 import com.arshaa.dtos.RatedDto;
 import com.arshaa.entity.Guest;
@@ -11,6 +13,7 @@ import com.arshaa.entity.RatesConfig;
 import com.arshaa.entity.SecurityDeposit;
 import com.arshaa.entity.Defaults;
 import com.arshaa.model.DueGuestsList;
+import com.arshaa.model.EmailTempModel;
 import com.arshaa.model.GuestImageDisplay;
 import com.arshaa.model.GuestsInNotice;
 import com.arshaa.model.PreviousGuests;
@@ -20,6 +23,7 @@ import com.arshaa.model.ResponseMessage;
 import com.arshaa.model.VacatedGuests;
 import com.arshaa.repository.GuestRepository;
 import com.arshaa.repository.RatesConfigRepository;
+import com.arshaa.service.DueCalculateService;
 import com.arshaa.service.GuestInterface;
 import com.arshaa.service.GuestProfileService;
 import com.arshaa.service.NotesService;
@@ -77,7 +81,48 @@ public class GuestController {
 	@Autowired
 	 private RatesConfigRepository rcr ;
 	
+	@Autowired
+	private    DueCalculateService dueService;
 	
+	@GetMapping("/getDuesCalc")
+	public ResponseEntity checkDueOfGuest() {
+	try {
+		return new ResponseEntity(dueService.clearDueAmount(), HttpStatus.OK);
+	}
+	catch(Exception e) {
+		return new ResponseEntity(e.getMessage(), HttpStatus.OK);
+	}
+	}
+	
+	
+	@PostMapping("/initiatecheckoutbyguestid/{guestId}")
+	public ResponseEntity initiateCheckOut(@RequestBody InitiateCheckoutByGuestId gcb , @PathVariable String guestId) {
+		Guest guest = new Guest();
+		try {
+			if(guest.getId()!= null) {
+				return new ResponseEntity(service.GuestCheckoutBody(gcb , guestId) , HttpStatus.OK);
+			}
+		}
+		catch(Exception e) {
+			System.out.println("id not available" + e.getLocalizedMessage());
+		}
+		return new ResponseEntity(service.GuestCheckoutBody(gcb , guestId) , HttpStatus.OK);
+		
+	}
+	
+	@PutMapping("/editGuestDetails/{guestId}")
+	public ResponseEntity editGuest(@RequestBody UpdateGuestDetails ud , @PathVariable String guestId) {
+		Guest guest = new Guest();
+		try {
+		if(guest.getId()!=null) {
+			return new ResponseEntity( service.updateGuestDetails(ud, guestId), HttpStatus.OK);
+		}
+		
+		}catch(Exception e) {
+			System.out.println("id not available" + e.getLocalizedMessage());
+		}
+		return new ResponseEntity( service.updateGuestDetails(ud, guestId), HttpStatus.OK);
+	}
 	//Posting Rates based on sharing 
 	@PostMapping("/postRates")
 	public RatesConfig saveRates(@RequestBody RatesConfig rates) {
@@ -246,6 +291,22 @@ public class GuestController {
 	public ResponseEntity getGuestNumberById(@PathVariable String id) {
 		Guest guest = repository.getNameById(id);
 		return new ResponseEntity(guest.getFirstName().concat(" ").concat(guest.getLastName()), HttpStatus.OK);
+	}
+	
+//	@GetMapping("/getBedIdByGuestId/{id}")
+//	public ResponseEntity getBedIdByGuestId(@PathVariable String id)
+//	{
+//		Guest g=repository.getBedIdById(id);
+//		return new ResponseEntity(g.getBedId(),HttpStatus.OK);
+//	}
+
+	@GetMapping("/getcheckInByGuestId/{id}")
+	public ResponseEntity getcheckInByGuestId(@PathVariable String id)
+	{
+		Guest g=repository.findById(id);
+		EmailTempModel em=new EmailTempModel();
+		em.setCheckInDate(g.getCheckInDate());
+		return new ResponseEntity(em,HttpStatus.OK);
 	}
 
 //   	@GetMapping("/guestReport")
@@ -512,6 +573,54 @@ public ResponseEntity getNoteById(@PathVariable String guestId) {
    return nServ.getNoteById(guestId);
 }
 
+@GetMapping("/getAllRents/{occupancyType}/{buildingId}/{sharing}")
+public ResponseEntity getAllRents(@PathVariable String occupancyType,@PathVariable int buildingId,@PathVariable int sharing)
+{
+	try {
+		
+   return service.getAllRents(occupancyType, buildingId, sharing);
+	}catch(Exception e) {
+		System.out.println("ABCD");
+	}
+	return null;
+}
+
+
+
+// Due related Api
+
+@GetMapping("/calculateGuestDueByGuestId/{guestId}")
+public double calculateDueGuest(@PathVariable String guestId) {
+ return dueService.calculateDueGuest(guestId);
+}
+
+
+@GetMapping("/updateDueAmount/{amountPaid}/{refundAmount}/{guestId}")
+public ResponseEntity updateDueAmount(@PathVariable double amountPaid,@PathVariable double refundAmount,@PathVariable String guestId)
+{
+    return dueService.updateDueAmount(amountPaid, refundAmount, guestId);
+}
+
+@GetMapping("/calculationForInnotice/{id}")
+    public ResponseEntity calculateDueOnlyForInNoticeguy(@PathVariable String id) {
+        return dueService.calculateDueForInNotice(id);
+    }
+
+@GetMapping("/finishCheckoutClick/{guestId}")
+public ResponseEntity finishCheckOutClick(@PathVariable String guestId)
+{
+    return dueService.finishCheckOutClick(guestId);
+}
+
+@GetMapping("/updatePackageIdInGuest")
+public ResponseEntity updatePackageIdInGuest()
+{
+	return dueService.updatePackageIdInGuest();
+}
+@GetMapping("/getRate/{buildingId}/{occupancyType}/{price}/{roomType}")
+public ResponseEntity getpackageIdByAllTypes(@PathVariable int buildingId,@PathVariable String occupancyType,@PathVariable double price,@PathVariable String roomType ) {
+ return new ResponseEntity( rcr.findByBuildingIdAndOccupancyTypeAndPriceAndRoomType(buildingId,occupancyType,price,roomType), HttpStatus.OK);
+}
 }
 //	@GetMapping("/getGuestAboutToCheckOut/RegulatInNotice/Daily-Monthly-Active/{id}")
 //	public List<GuestsInNotice> getAll(@PathVariable String id) {

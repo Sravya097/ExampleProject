@@ -1,6 +1,8 @@
 package com.arshaa.service;
 
 import com.arshaa.common.Bed;
+import com.arshaa.common.InitiateCheckoutByGuestId;
+import com.arshaa.common.UpdateGuestDetails;
 import com.arshaa.dtos.GuestDto;
 import com.arshaa.dtos.RatedDto;
 import com.arshaa.entity.Guest;
@@ -63,7 +65,11 @@ public interface GuestInterface {
 	
 	public List<RatesConfig> findByOccupancyType(String occupancyType);
 	
+	public ResponseEntity getAllRents(String occupancyType, int buildingId, int sharing);
 	
+	
+public ResponseEntity updateGuestDetails(UpdateGuestDetails editGuest , String id);
+public ResponseEntity GuestCheckoutBody(InitiateCheckoutByGuestId gcb ,String id);
 
 
 }

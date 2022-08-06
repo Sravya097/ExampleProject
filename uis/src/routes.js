@@ -23,6 +23,8 @@ import ConfigSecurityDeposits from 'layouts/cofigSecurityDeposit/Components';
 import PastGuest from 'layouts/profile/indexforpastGuest';
 import PendingPayments from 'layouts/pendingPayments' ;
 import ConfigRentsIndex from 'layouts/configRents';
+import MonthlySummary from 'layouts/MonthlySummary';
+// import EditGuestDetailsScreen from 'layouts/roomavailabilitytracker/buildings/EditGuestDetails';
 const routes = [
 	{
 		type: 'collapse',
@@ -119,6 +121,14 @@ const routes = [
 	},
 	{
 		type: 'collapse',
+		name: 'Monthly Summary',
+		key: 'monthlySummary',
+		icon: <Icon fontSize="small">Important</Icon>,
+		route: '/monthlySummary',
+		component: <MonthlySummary />
+	},
+	{
+		type: 'collapse',
 		name: 'Payments History',
 		key: 'allTransactions',
 		icon: <Icon fontSize="small">payments</Icon>,
@@ -191,6 +201,14 @@ const routes = [
 		route: '/authentication/sign-in',
 		component: <SignIn />
 	},
+	// {
+	// 	type: 'main',
+	// 	name: 'Edit Guest',
+	// 	key: 'editGuest',
+	// 	icon: <Icon fontSize="small">logout</Icon>,
+	// 	route: '/editGuest',
+	// 	component: <EditGuestDetailsScreen />
+	// },
 	{
 		type: 'main',
 		name: 'Forgot Password',

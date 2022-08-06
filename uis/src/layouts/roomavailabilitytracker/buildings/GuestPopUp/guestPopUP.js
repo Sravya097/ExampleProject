@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+// import { useNavigate } from "react-router-dom";
 // import axios from "axios";
 // import Button from "@mui/material/Button";
 import MDButton from "components/MDButton";
@@ -22,69 +23,30 @@ import CheckOut from "./GuestCheckoutModule/CheckOut";
 import "./GuestPopUp.css";
 import AppBar from '@mui/material/AppBar';
 import GuestPic from './GuestPicture/GuestPic';
+import { useNavigate } from "react-router-dom";
+// import EditGuestDetailsScreen from "../EditGuestDetails";
+import EditGuestPopUp from "./EditGuestPopUp";
 
 
 
-export default function GuestPopUp({ open, handleClose, ...props }) {
+export default function GuestPopUp({ open, handleCloseGuestModalWindow, ...props }) {
+  const [showEditGuest , setShowEditGuest] = useState(false);
   // console.log('heeeeeeeeeeeeeee')
+  const navigate = useNavigate();
+
+  const editGuestHandler = () =>{
+    // navigate("/editGuest")
+    handleCloseGuestModalWindow();
+    setShowEditGuest(!showEditGuest);
+  }
   // console.log(props.TotalAmountByGuest)
   console.log(props.GuestPic)
   return (
     <div>
-      {props.GuestDetails.occupancyType === "regular" ? (
-        <Dialog open={open} onClose={handleClose} maxWidth="lg">
-           <AppBar position="static"
-            width="100%"
-            variant="contained"
-            color="error"
-            size="large"
-            justify="center"
-            style={{ borderRadius: 0 }}
-          >
-            Guest Details
-          </AppBar>
-          <DialogContent>
-            <GuestDetailsIndex
-              guestdetails={props.GuestDetails}
-              GuestDueAmount={props.GuestDueAmount}
-              TotalAmountByGuest={props.TotalAmountByGuest}
-            />
-            <br />
-
-            <CheckOut
-              guestdetails={props.GuestDetails}
-              GuestDueAmount={props.GuestDueAmount}
-            />
-            <br />
-
-            <br />
-            {/* <RecordpaymentsinPopUp guestdetails={props.GuestDetails} /> */}
-            <DialogTitle>
-              <br />
-              <h3 className="head-1-checkOut">Transaction History</h3>
-            </DialogTitle>
-            <TransactionHistory guestdetails={props.GuestDetails} />
-          </DialogContent>
-          <DialogActions>
-            <Grid container style={{ display: "flex" }}>
-              <Grid item xs={6}>
-                <MDButton
-                  width="20%"
-                  variant="contained"
-                  color="info"
-                  size="large"
-                  justify="center"
-                  style={{ borderRadius: 10 }}
-                  onClick={handleClose}
-                >
-                  Close
-                </MDButton>
-              </Grid>
-            </Grid>
-          </DialogActions>
-        </Dialog>
-      ) : (
-        <Dialog open={open} onClose={handleClose} maxWidth="lg">
+      <EditGuestPopUp guestdetails={props.GuestDetails} showEditGuest={showEditGuest} editGuestHandler={editGuestHandler}
+                      // handleCloseGuestModalWindow={handleCloseGuestModalWindow}
+                      />
+      <Dialog open={open} onClose={handleCloseGuestModalWindow} maxWidth="lg">
           <MDButton
             width="20%"
             variant="contained"
@@ -95,13 +57,28 @@ export default function GuestPopUp({ open, handleClose, ...props }) {
           >
             Guest Details
           </MDButton>
+
           <DialogContent>
-            {/* <GuestPic   GuestPic={props.GuestPic} guestdetails={props.GuestDetails}/> */}
+          <MDButton
+                  width="20%"
+                  variant="contained"
+                  color="info"
+                  size="small"
+                  justify="center"
+                  style={{ borderRadius: 10,
+                           float:'right' }}
+                  onClick={editGuestHandler}
+                  
+                >
+                  EDit Guest
+                </MDButton>
+            <GuestPic    guestdetails={props.GuestDetails}/>
             <GuestDetailsIndex
               guestdetails={props.GuestDetails}
               GuestDueAmount={props.GuestDueAmount}
               TotalAmountByGuest={props.TotalAmountByGuest}
             />
+            
             <br />
 
             <CheckOut
@@ -125,7 +102,7 @@ export default function GuestPopUp({ open, handleClose, ...props }) {
                   size="large"
                   justify="center"
                   style={{ borderRadius: 10 }}
-                  onClick={handleClose}
+                  onClick={handleCloseGuestModalWindow}
                 >
                   Close
                 </MDButton>
@@ -133,7 +110,9 @@ export default function GuestPopUp({ open, handleClose, ...props }) {
             </Grid>
           </DialogActions>
         </Dialog>
-      )}
+      
+        
+      
     </div>
   );
 }

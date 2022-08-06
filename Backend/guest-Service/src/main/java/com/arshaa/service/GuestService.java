@@ -3,6 +3,7 @@ package com.arshaa.service;
 
 import com.arshaa.common.CheckOutIntiated;
 import com.arshaa.common.FinalCheckOutConfimation;
+import com.arshaa.common.InitiateCheckoutByGuestId;
 import com.arshaa.common.OnboardingConfirmation;
 import com.arshaa.model.EmailResponse;
 
@@ -10,12 +11,13 @@ import com.arshaa.common.Bed;
 import com.arshaa.common.MailDto;
 import com.arshaa.common.Payment;
 import com.arshaa.common.PaymentRemainderData;
+import com.arshaa.common.UpdateGuestDetails;
+import com.arshaa.common.UpdateGuestStatusAfterInitiateCheckout;
 import com.arshaa.dtos.GuestDto;
 import com.arshaa.dtos.RatedDto;
 import com.arshaa.entity.Guest;
 import com.arshaa.entity.RatesConfig;
 import com.arshaa.model.DueGuestsList;
-import com.arshaa.model.GuestsInNotice;
 import com.arshaa.model.PaymentRemainder;
 import com.arshaa.model.PreviousGuests;
 import com.arshaa.model.VacatedGuests;
@@ -29,6 +31,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.client.RestTemplate;
@@ -73,6 +76,19 @@ public class GuestService implements GuestInterface {
 	@Autowired
 	@PersistenceContext
 	private EntityManager em;
+	
+	@Autowired
+	private    DueCalculateService dueService;
+	
+	
+
+ 
+	    
+	    public ResponseEntity getAllRents(String occupancyType, int buildingId, int sharing)
+	    {
+    		RatesConfig rc=rconfig.findByOccupancyTypeAndBuildingIdAndSharing(occupancyType,buildingId,sharing);
+             return new ResponseEntity(rc,HttpStatus.OK);
+	    }
 
 	@Override
 	public List<GuestDto> getGuests(String field) {
@@ -112,7 +128,7 @@ public class GuestService implements GuestInterface {
         //double initialDefaultrent = 0;
         String bedUri = "http://bedService/bed/updateBedStatusBydBedId";
         String payUri = "http://paymentService/payment/addPaymentAtOnBoarding";
-    //    String mailUri="http://emailService/mail/sendOnboardingConfirmation";
+        String mailUri="http://emailService/mail/sendOnboardingConfirmation";
  //     Bed getUniqueBed = template.getForObject("http://bedService/bed/getBedByBedId/" + guest.getBedId(), Bed.class);
 //        if (getUniqueBed.getBedId().equalsIgnoreCase(guest.getBedId())) {
 //            System.out.println(getUniqueBed.getBedId());
@@ -127,6 +143,17 @@ public class GuestService implements GuestInterface {
         java.sql.Date tSqlDate = new java.sql.Date(guest.getTransactionDate().getTime());
         
         guest.setTransactionDate(tSqlDate);
+        guest.setLastBillGenerationDate(guest.getCheckInDate());
+
+
+        java.util.Date billGeneratedTill = guest.getCheckInDate();
+     Calendar cal2 = Calendar.getInstance();
+     cal2.setTime(billGeneratedTill);
+     cal2.add(Calendar.MONTH, 1);
+     billGeneratedTill = cal2.getTime();
+     java.sql.Date convertedbillGeneratedTill =new java.sql.Date(billGeneratedTill.getTime())    ;
+     System.out.println(billGeneratedTill);
+    guest.setBillGeneratedTill(convertedbillGeneratedTill);
         
        
        java.sql.Date createDate =new java.sql.Date(guest.getCreatedOn().getTime());
@@ -142,6 +169,7 @@ public class GuestService implements GuestInterface {
            if(guest.getOccupancyType().equalsIgnoreCase("Daily"))
            {
            	java.util.Date m = guest.getCheckInDate();
+           	java.sql.Date ms = new java.sql.Date(m.getTime());
                Calendar cal = Calendar.getInstance();  
                cal.setTime(m);  
                cal.add(Calendar.DATE, guest.getDuration()); 
@@ -156,6 +184,9 @@ public class GuestService implements GuestInterface {
            	guest.setDuration(1);
            	repository.save(guest);
            	java.util.Date m = guest.getCheckInDate();
+           	
+           	java.sql.Date ms = new java.sql.Date(m.getTime());
+           	
                Calendar cal = Calendar.getInstance();  
                cal.setTime(m);  
                cal.add(Calendar.MONTH, guest.getDuration()); 
@@ -177,9 +208,11 @@ public class GuestService implements GuestInterface {
 
 
 //           System.out.println(initialDefaultrent); 
-           guest.setGuestStatus("active");            
+           guest.setGuestStatus("active"); 
+           
 
            repository.save(guest);
+           dueService.updateGuestDue();
                    System.out.println(guest.getDueAmount());
            Bed bedReq = new Bed();
            Payment payReq = new Payment();
@@ -203,14 +236,14 @@ public class GuestService implements GuestInterface {
            Payment parRes = template.postForObject(payUri, payReq, Payment.class);
            System.out.println(parRes);
            
-//           OnboardingConfirmation mail=new OnboardingConfirmation();
-//           mail.setName(guest.getFirstName()+guest.getLastName());
-//           mail.setAmountPaid(guest.getAmountPaid());
-//           String name=template.getForObject("http://bedService/bed/getBuildingNameByBuildingId/"+ guest.getBuildingId(), String.class);
-//           mail.setBuildingName(name);
-//           mail.setBedId(guest.getBedId());
-//           mail.setEmail(guest.getEmail());
-//           OnboardingConfirmation res = template.postForObject(mailUri, mail, OnboardingConfirmation.class);
+           OnboardingConfirmation mail=new OnboardingConfirmation();
+           mail.setName(guest.getFirstName()+guest.getLastName());
+           mail.setAmountPaid(guest.getAmountPaid());
+           String name=template.getForObject("http://bedService/bed/getBuildingNameByBuildingId/"+ guest.getBuildingId(), String.class);
+           mail.setBuildingName(name);
+           mail.setBedId(guest.getBedId());
+           mail.setEmail(guest.getEmail());
+           OnboardingConfirmation res = template.postForObject(mailUri, mail, OnboardingConfirmation.class);
 
                    return guest;
        }
@@ -360,15 +393,24 @@ public class GuestService implements GuestInterface {
 //		g.setTransactionDate(tDate);
 		g.setTransactionDate(guest.getTransactionDate());
 		g.setTransactionId(guest.getTransactionId());
-		g.setWorkAddressLine1(guest.getWorkAddressLine1());
-		g.setWorkAddressLine2(guest.getWorkAddressLine2());
-		g.setWorkPhone(guest.getWorkPhone());
+		
+		 if(guest.getBuildingId()==0 || guest.getBedId()==null)
+         {
+             Guest gt =null;
+             return gt;
+         }
+         else {
+		
 		repository.save(g);
 
 		if (guest.getOccupancyType().equalsIgnoreCase("daily")) {
 			java.util.Date m = guest.getCheckInDate();
+			java.sql.Date ms = new java.sql.Date(m.getTime());
+			
+		
+			
 			Calendar cal = Calendar.getInstance();
-			cal.setTime(m);
+			cal.setTime(ms);
 			cal.add(Calendar.DATE, guest.getDuration());
 			m = cal.getTime();
 			//Newly Addel Logic 
@@ -381,14 +423,16 @@ public class GuestService implements GuestInterface {
 			repository.save(g);
 		} else if (guest.getOccupancyType().equalsIgnoreCase("OneMonth")) {
 			java.util.Date m = guest.getCheckInDate();
+			java.sql.Date ms = new java.sql.Date(m.getTime());
 			Calendar cal = Calendar.getInstance();
-			cal.setTime(m);
+			cal.setTime(ms);
 			cal.add(Calendar.MONTH, guest.getDuration());
 			cal.add(Calendar.MONTH, 0);
-			m = cal.getTime();
+			ms = (Date) cal.getTime();
             cal.add(Calendar.DATE,-1);
             m=cal.getTime();
 			System.out.println(m);
+			
 
 			DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 			// System.out.println(dtf.format(m));
@@ -401,6 +445,7 @@ public class GuestService implements GuestInterface {
 
 			repository.save(g);
 		}
+         }
 
 //	        System.out.println(initialDefaultrent); 
 		guest.setGuestStatus("active");
@@ -715,15 +760,23 @@ public ResponseEntity paymentRemainder(int buildingId)
 		return rconfig.findByBuildingId(buildingId);
 	}
 
-	@Override
-	public RatesConfig updateRoomRent(RatedDto Rdto, int id) {
-		// TODO Auto-generated method stub
-	RatesConfig r = rconfig.getById(id);
-	r.setPrice(Rdto.getPrice());
+//	@Override
+//	public double updateRoomRent(RatedDto Rdto, int id) {
+//		// TODO Auto-generated method stub
+//		try {
+//			RatesConfig r = rconfig.getById(id);
+//			r.setPrice(Rdto.getPrice());
+//			RatesConfig rc=rconfig.save(r);
+//			Guest guest=repository.findByPackageId(id);
+//			guest.setDefaultRent(r.getPrice());
+//			return rconfig.save(guest.getDefaultRent());
+//		}catch(Exception e)
+//		{
+//			return null;
+//		}
 	
-	return rconfig.save(r);
 
-	}
+//	}
 
 	@Override
 	public List<RatesConfig> findByBuildingIdAndOccupancyType(int buildingId, String occupancyType) {
@@ -737,4 +790,76 @@ public ResponseEntity paymentRemainder(int buildingId)
 		return rconfig.findByOccupancyType(occupancyType);
 	}
 
+	@Override
+    public ResponseEntity updateGuestDetails(UpdateGuestDetails editGuest, String id) {
+        // TODO Auto-generated method stub
+        Guest guest = repository.findById(id);
+//        if(guest.getAadharNumber()== null || guest.getEmail()== null || guest.getPersonalNumber()==null || guest.getCity()==null || guest.getState()==null ) {
+//            if(guest.getAddressLine1()==null || guest.getAddressLine2()==null || guest.getBloodGroup() ==null || guest.getPincode()==null || guest.getFatherNumber()==null) {
+
+
+             {
+                guest.setId(id);
+
+            guest.setFirstName(editGuest.getLastName());
+            guest.setLastName(editGuest.getLastName());
+            guest.setEmail(editGuest.getEmail());
+            guest.setPersonalNumber(editGuest.getPersonalNumber());
+            guest.setAadharNumber(editGuest.getAadharNumber());
+            guest.setAddressLine1(editGuest.getAddressLine1());
+            guest.setDateOfBirth(editGuest.getDateOfBirth());
+            guest.setGender(editGuest.getGender());
+
+            guest.setPincode(editGuest.getPincode());
+            guest.setState(editGuest.getState());
+            guest.setCity(editGuest.getCity());
+
+            return new ResponseEntity(repository.save(guest), HttpStatus.OK);
+        }
+           
+//        return new ResponseEntity( "Cant update", HttpStatus.OK);      
+    }
+	
+	@Override
+	public ResponseEntity GuestCheckoutBody(InitiateCheckoutByGuestId gcb ,String id) {
+		
+		try {
+			Guest guest = repository.findById(id);	
+			guest.setId(id);
+			guest.setNoticeDate(gcb.getNoticeDate());
+			guest.setPlannedCheckOutDate(gcb.getPlannedCheckOutDate());
+			guest.setOccupancyType(gcb.getOccupancyType());
+			guest.setGuestStatus("InNotice");
+		//	guest.setCheckOutDate(gcb.getPlannedCheckOutDate());
+			repository.save(guest);
+			dueService.calculateDueForInNotice(id);
+	
+		return new ResponseEntity ("Checkout intiated successfully" , HttpStatus.OK);
+		}
+		catch(Exception e)
+		{
+			return new ResponseEntity (e.getMessage() , HttpStatus.OK);
+
+		}
+		
+		
+//		UpdateGuestStatusAfterInitiateCheckout upGstStatus = new UpdateGuestStatusAfterInitiateCheckout();
+//		
+//		guest.setId(id);
+//		upGstStatus.setGuestStatus("InNotice");
+		
+		
+		
+		
+		
+	}
+
+	@Override
+	public RatesConfig updateRoomRent(RatedDto Rdto, int id) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	
+	
 }

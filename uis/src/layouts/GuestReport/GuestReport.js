@@ -32,7 +32,7 @@ function GuestReport() {
 
         },
         {
-            title: "Guest ChechInDate",
+            title: "Guest CheckInDate",
             field: "checkInDate",
 
 
@@ -167,5 +167,4 @@ function GuestReport() {
 
     );
 }
-
 export default GuestReport;

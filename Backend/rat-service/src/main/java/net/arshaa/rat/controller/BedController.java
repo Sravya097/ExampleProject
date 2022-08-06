@@ -23,11 +23,14 @@ import Models.BuildingSummary;
 import Models.FloorNameAndId;
 import Models.FloorsInfo;
 import Models.NewBuildModel;
+import Models.Response;
 import Models.RoomDto;
 import Models.RoomsInfo;
 import Models.UpdateBedDto;
 import common.Guest;
 import common.GuestProfile;
+import common.MonthluSumResponse;
+import common.MonthlySummary;
 import common.User;
 import net.arshaa.rat.entity.Bed;
 import net.arshaa.rat.entity.Buildings;
@@ -654,7 +657,7 @@ Rooms room = roomRepo.save(newRoom);
 										//newBed.setGuest(listOfGuests);
 										newBed.setGuestName(listOfGuests.getFirstName());
 										newBed.setGuestStatus(listOfGuests.getGuestStatus());
-										
+										newBed.setDueAmount(listOfGuests.getDueAmount());
 										GuestProfile getProfile=template.getForObject("http://guestService/guest/files/" + newBed.getGuestId(),GuestProfile.class);										
                                         newBed.setName(getProfile.getName());
                                         newBed.setType(getProfile.getType());
@@ -1075,13 +1078,65 @@ Rooms room = roomRepo.save(newRoom);
 
 		   	}
 	
-	@GetMapping("/getSharingCount/{roomId}")
-  int calculatingSharing(@PathVariable  int roomId){
-        // repo.findNumberOfRemainingLeavesByEmployeeId(employeeId);
-        int b = bedrepo.countSharing(roomId);
-        return b;
-    
+//Get Api to get monthly summary by buildingwise
+    @GetMapping("getMonthlySummaryForAdmin/{month}/{year}")	
+	public ResponseEntity getMonthlySummary(@PathVariable int month,@PathVariable int year)
+	{ 
+    	MonthluSumResponse msRes=new MonthluSumResponse();
+		String getIncomeRefURL="http://paymentService/payment/getMonthlySummary/";
+		List<MonthlySummary> getList=new ArrayList<>();
+		try {
+			List<Buildings> getBuildings = buildingRepo.findAll();
+			
+				getBuildings.forEach(building -> {
+					MonthlySummary ms=new MonthlySummary();
+
+					Response getMonthlySum=template.getForObject(getIncomeRefURL+month+"/"+year+"/"+building.getBuildingId(), Response.class);
+					if(!(getMonthlySum.getData()).equals(null))
+					{
+						ms.setBuildingName(building.getBuildingName());
+						ms.setIncomeAmount(getMonthlySum.getData().getIncomeAmount());
+						ms.setRefundAmount(getMonthlySum.getData().getRefundAmount());
+						double actualIncome=getMonthlySum.getData().getIncomeAmount()-getMonthlySum.getData().getRefundAmount();
+						ms.setActualIncome(actualIncome);
+						getList.add(ms);
+						msRes.setStatus(true);
+						msRes.setData(getList);
+					}
+					else {
+						msRes.setStatus(false);
+						msRes.setData(null);
+					}
+				});
+				return new ResponseEntity<>(msRes, HttpStatus.OK);
+		}
+		catch (Exception e){
+			msRes.setStatus(false);
+			return new ResponseEntity<>(msRes, HttpStatus.OK);
+		}
 	}
 	
+    @GetMapping("/getStatusByGuestId/{guestId}")
+    public ResponseEntity getStatusByGuestId(@PathVariable String guestId) {
+    	Bed b=bedrepo.findByGuestId(guestId);
+    	if(!b.equals(null))
+    	{
+    		String bedStatus="";
+        	if(b.isAc()==true)
+        	{
+        		bedStatus="AC";
+        	}
+        	else {
+        		bedStatus="NonAC";
+        	}
+        	return new ResponseEntity(bedStatus,HttpStatus.OK);
+    	}
+    	else {
+        	return new ResponseEntity(null,HttpStatus.OK);
+
+    	}
+    	
+    }
+    
 
 }
